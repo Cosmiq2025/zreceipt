@@ -110,7 +110,7 @@
       copy.textContent = "Copied";
       setTimeout(() => (copy.textContent = "Copy link"), 1800);
     });
-    const open = el("a", { class: "btn secondary small-btn", href: link, target: "_blank", rel: "noopener", text: "Open" });
+    const open = el("a", { class: "btn secondary small-btn", href: link, target: "_blank", rel: "noopener", text: "Open receipt" });
 
     const rows = el("dl", { class: "rows" });
     const row = (k, v, mono) => { if (v) rows.append(el("div", {}, el("dt", { text: k }), el("dd", mono ? { class: "mono", text: v } : { text: v }))); };
