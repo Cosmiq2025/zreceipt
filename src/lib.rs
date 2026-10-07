@@ -84,11 +84,12 @@ impl Receipt {
         let body = s
             .trim()
             .strip_prefix(RECEIPT_PREFIX)
-            .ok_or_else(|| anyhow!("not a receipt: missing {RECEIPT_PREFIX} prefix"))?;
-        let json = URL_SAFE_NO_PAD.decode(body).context("receipt is not valid base64url")?;
-        let r: Receipt = serde_json::from_slice(&json).context("receipt payload is malformed")?;
+            .ok_or_else(|| anyhow!("This is not a receipt. A receipt starts with {RECEIPT_PREFIX}."))?;
+        const DAMAGED: &str = "This receipt is incomplete or was changed. Ask the sender to copy the full link again.";
+        let json = URL_SAFE_NO_PAD.decode(body).map_err(|_| anyhow!(DAMAGED))?;
+        let r: Receipt = serde_json::from_slice(&json).map_err(|_| anyhow!(DAMAGED))?;
         if r.v != 1 {
-            bail!("unsupported receipt version {}", r.v);
+            bail!("This receipt was made by a newer version of zreceipt (format {}).", r.v);
         }
         Ok(r)
     }
@@ -123,8 +124,8 @@ pub struct CreatedReceipt {
 /// Parses a raw transaction from hex. The branch id is only consulted for
 /// pre-v5 transactions, which carry no branch id in their encoding.
 pub fn parse_tx(raw_hex: &str) -> Result<Transaction> {
-    let bytes = hex::decode(raw_hex.trim()).context("transaction is not hex")?;
-    Transaction::read(&bytes[..], BranchId::Nu6_3).context("could not parse transaction")
+    let bytes = hex::decode(raw_hex.trim()).map_err(|_| anyhow!("The raw transaction must be hexadecimal text."))?;
+    Transaction::read(&bytes[..], BranchId::Nu6_3).context("The transaction data could not be read. Check that the raw transaction is complete.")
 }
 
 fn memo_text(bytes: &[u8; 512]) -> Option<String> {
@@ -155,7 +156,7 @@ fn encode_sapling(net: Net, addr: &sapling::PaymentAddress) -> String {
 /// usually present the list and let the user pick the payment to disclose.
 pub fn create_receipts(tx: &Transaction, ufvk: &str, net: Net) -> Result<Vec<CreatedReceipt>> {
     let ufvk = UnifiedFullViewingKey::decode(&net.params(), ufvk.trim())
-        .map_err(|e| anyhow!("invalid unified full viewing key: {e}"))?;
+        .map_err(|_| anyhow!("This viewing key could not be read. Check that you copied all of it and picked the right network."))?;
     let txid = tx.txid().to_string();
     let mut out = Vec::new();
 
@@ -216,13 +217,13 @@ pub fn create_receipts(tx: &Transaction, ufvk: &str, net: Net) -> Result<Vec<Cre
 pub fn verify_receipt(tx: &Transaction, receipt: &Receipt) -> Result<Disclosed> {
     let txid = tx.txid().to_string();
     if txid != receipt.txid {
-        bail!("receipt is for transaction {}, not {txid}", receipt.txid);
+        bail!("This receipt is for transaction {}, not {txid}.", receipt.txid);
     }
     let ock = receipt.ock_bytes()?;
 
     match receipt.pool {
         Pool::Sapling => {
-            let bundle = tx.sapling_bundle().ok_or_else(|| anyhow!("transaction has no Sapling outputs"))?;
+            let bundle = tx.sapling_bundle().ok_or_else(|| anyhow!("This transaction has no Sapling outputs, so the receipt does not belong to it."))?;
             let output = bundle
                 .shielded_outputs()
                 .get(receipt.index)
@@ -230,7 +231,7 @@ pub fn verify_receipt(tx: &Transaction, receipt: &Receipt) -> Result<Disclosed> 
             let domain = SaplingDomain::new(Zip212Enforcement::On);
             let (note, to, memo) =
                 try_output_recovery_with_ock(&domain, &ock, output, output.out_ciphertext())
-                    .ok_or_else(|| anyhow!("receipt key does not open this output"))?;
+                    .ok_or_else(|| anyhow!("This receipt does not match the payment recorded in the transaction. It may have been edited."))?;
             Ok(Disclosed {
                 txid,
                 pool: Pool::Sapling,
@@ -241,11 +242,11 @@ pub fn verify_receipt(tx: &Transaction, receipt: &Receipt) -> Result<Disclosed> 
             })
         }
         Pool::Orchard => {
-            let bundle = tx.orchard_bundle().ok_or_else(|| anyhow!("transaction has no Orchard actions"))?;
+            let bundle = tx.orchard_bundle().ok_or_else(|| anyhow!("This transaction has no Orchard outputs, so the receipt does not belong to it."))?;
             open_action::<OrchardVersion, _>(bundle.actions().iter(), receipt, &ock, txid)
         }
         Pool::Ironwood => {
-            let bundle = tx.ironwood_bundle().ok_or_else(|| anyhow!("transaction has no Ironwood actions"))?;
+            let bundle = tx.ironwood_bundle().ok_or_else(|| anyhow!("This transaction has no Ironwood outputs, so the receipt does not belong to it."))?;
             open_action::<IronwoodVersion, _>(bundle.actions().iter(), receipt, &ock, txid)
         }
     }
@@ -309,7 +310,7 @@ pub fn open_action<'a, V: DomainVersion, T: 'a>(
     let domain = NoteEncryptionDomain::<V>::for_action(action);
     let (note, to, memo) =
         try_output_recovery_with_ock(&domain, ock, action, &action.encrypted_note().out_ciphertext)
-            .ok_or_else(|| anyhow!("receipt key does not open this output"))?;
+            .ok_or_else(|| anyhow!("This receipt does not match the payment recorded in the transaction. It may have been edited."))?;
     Ok(Disclosed {
         txid,
         pool: receipt.pool,
