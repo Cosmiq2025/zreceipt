@@ -58,8 +58,37 @@ export function el(tag, attrs = {}, ...kids) {
   return n;
 }
 
-export const SEAL_SVG = `<svg class="seal" viewBox="0 0 128 128" fill="none" stroke="currentColor" aria-hidden="true">
-<defs><path id="sealring" d="M64 64 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
-<circle cx="64" cy="64" r="60" stroke-width="3" style="fill:var(--sheet);fill-opacity:.9"/><circle cx="64" cy="64" r="36" stroke-width="1.5"/>
-<text font-family="Public Sans, sans-serif" font-size="11" font-weight="700" fill="currentColor" stroke="none"><textPath href="#sealring" textLength="284" lengthAdjust="spacing">VERIFIED ON ZCASH • ONE PAYMENT ONLY •</textPath></text>
-<path d="M48 65 l11 11 l22 -24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+export const CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M4.6 8.2l2.2 2.2 4.6-4.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+export const CROSS_SVG = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+export const LOCK_SVG = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>`;
+
+const NET_NAME = { main: "Zcash mainnet", test: "Zcash testnet" };
+
+/** The verified-payment view, shared by verify.html. */
+export function renderResult(d, r, meta) {
+  const root = el("div", { class: "result" });
+  const badge = el("span", { class: "badge" });
+  badge.innerHTML = CHECK_SVG;
+  badge.append(`Verified on ${NET_NAME[r.net]}`);
+  const amt = el("p", { class: "amount" }, `${formatZec(d.value_zat)} `, el("span", { text: "ZEC" }));
+  const memo = el("p", { class: "memo", text: d.memo || "No memo" });
+  const rows = el("dl", { class: "rows" });
+  const row = (k, v, { href, mono } = {}) => {
+    if (!v) return;
+    const dd = el("dd", mono ? { class: "mono" } : {});
+    if (href) dd.append(el("a", { href, target: "_blank", rel: "noopener", text: v })); else dd.textContent = v;
+    rows.append(el("div", {}, el("dt", { text: k }), dd));
+  };
+  row("Paid to", d.recipient, { mono: true });
+  row("Transaction", d.txid, { mono: true, href: EXPLORER[r.net] + d.txid });
+  row("Block", meta.height ? `${meta.height.toLocaleString("en-US")} on ${formatTime(meta.time)}` : "");
+  row("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
+  const hidden = el("div", { class: "hidden-list" }, el("h3", { text: "Not shared with you" }));
+  const ul = el("ul");
+  for (const t of ["Sender's balance", "Sender's other payments", "Sender's address", "Rest of the transaction"]) {
+    const li = el("li"); li.innerHTML = LOCK_SVG; li.append(t); ul.append(li);
+  }
+  hidden.append(ul);
+  root.append(badge, amt, memo, rows, hidden);
+  return root;
+}

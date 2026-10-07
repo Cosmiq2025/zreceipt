@@ -10,38 +10,36 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/" aria-label="zreceipt home">
-      <img class="on-light" src="brand/zreceipt-logo.svg" alt="zreceipt" width="244" height="64">
-      <img class="on-dark" src="brand/zreceipt-logo-white.svg" alt="" width="244" height="64">
-    </a>
+    <a class="brand" href="/" aria-label="zreceipt home"><img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64"></a>
     <nav class="nav" aria-label="Main">
-      <a href="/create.html" aria-current="page">Create a receipt</a>
-      <a href="/verify.html">Verify a receipt</a>
+      <a href="/create.html" aria-current="page">Create<span class="hide-sm"> a receipt</span></a>
+      <a href="/verify.html">Verify<span class="hide-sm"> a receipt</span></a>
     </nav>
   </header>
 
   <main class="tool">
-    <h1>Create a receipt for a payment you sent</h1>
-    <p class="lede">You get one link per payment. Whoever opens it can check that payment, and only that payment.</p>
-    <p class="notice">Your viewing key stays in this browser. The page downloads the public transaction and does every calculation locally.</p>
+    <h1>Create a receipt</h1>
+    <p class="sub">One link per payment. Whoever opens it can check that payment and nothing else.</p>
 
     <form id="form" novalidate>
       <fieldset class="inline">
         <legend>Network</legend>
-        <label><input type="radio" name="net" value="test" checked> Testnet</label>
-        <label><input type="radio" name="net" value="main"> Mainnet</label>
+        <div class="segmented">
+          <label><input type="radio" name="net" value="main" checked><span>Mainnet</span></label>
+          <label><input type="radio" name="net" value="test"><span>Testnet</span></label>
+        </div>
       </fieldset>
 
       <div>
         <label for="txid">Transaction ID
-          <span class="hint">Copy it from your wallet's transaction details.</span></label>
-        <input id="txid" type="text" autocomplete="off" spellcheck="false" placeholder="64 characters, for example 3f1c…a9e0">
+          <span class="hint">In your wallet, open the payment and copy its transaction ID.</span></label>
+        <input id="txid" type="text" autocomplete="off" spellcheck="false" placeholder="64 characters">
       </div>
 
       <div>
-        <label for="ufvk">Viewing key of the sending wallet
-          <span class="hint">Starts with uview. It can read your wallet but cannot spend from it.</span></label>
-        <textarea id="ufvk" autocomplete="off" spellcheck="false" placeholder="uviewtest1…"></textarea>
+        <label for="ufvk">Viewing key of the wallet that paid
+          <span class="hint">Starts with uview. It can read the wallet but cannot spend from it, and it stays in this browser.</span></label>
+        <textarea id="ufvk" autocomplete="off" spellcheck="false" placeholder="uview1…"></textarea>
       </div>
 
       <details>
@@ -59,7 +57,7 @@
 </div>
 
 <script type="module">
-  import { engine, fetchTx, normalizeTxid, formatZec, formatTime, POOL_NAME, el } from "./app.js";
+  import { engine, fetchTx, normalizeTxid, formatZec, POOL_NAME, el } from "./app.js";
 
   const form = document.getElementById("form");
   const status = document.getElementById("status");
@@ -68,7 +66,7 @@
 
   function say(msg, kind = "") {
     status.innerHTML = "";
-    if (msg) status.append(el("p", { class: `notice ${kind}`, text: msg, style: "margin-top:24px" }));
+    if (msg) status.append(el("p", { class: `notice ${kind}`, text: msg }));
   }
 
   form.addEventListener("submit", async (e) => {
@@ -80,23 +78,22 @@
     let txid = document.getElementById("txid").value;
 
     try {
-      if (!ufvk.startsWith("uview")) throw new Error("Paste the wallet's unified viewing key. It starts with uview.");
+      if (!ufvk.startsWith("uview")) throw new Error("Paste the wallet's viewing key. It starts with uview.");
       go.disabled = true;
       say("Fetching the transaction and checking its outputs…");
       const eng = await engine();
-      let hex = raw, meta = {};
+      let hex = raw;
       if (!hex) {
         txid = normalizeTxid(txid);
-        meta = await fetchTx(txid, net);
-        hex = meta.hex;
+        hex = (await fetchTx(txid, net)).hex;
       }
       const found = JSON.parse(eng.createReceipts(hex, ufvk, net));
       if (!found.length) {
-        say("This viewing key did not send anything in this transaction. Check the network, and that the key belongs to the sending wallet.", "error");
+        say("This wallet did not pay anything in this transaction. Check the network, and that the viewing key belongs to the wallet that paid.", "error");
         return;
       }
-      say(found.length === 1 ? "Found 1 payment from this wallet." : `Found ${found.length} outputs from this wallet. One of them may be change back to yourself.`);
-      for (const f of found) results.append(card(f, meta));
+      say(found.length === 1 ? "Found 1 payment from this wallet." : `Found ${found.length} outputs from this wallet. One of them may be change sent back to yourself.`);
+      for (const f of found) results.append(card(f));
     } catch (err) {
       say(String(err.message || err), "error");
     } finally {
@@ -104,27 +101,26 @@
     }
   });
 
-  function card({ receipt, disclosed: d }, meta) {
+  function card({ receipt, disclosed: d }) {
     const link = `${location.origin}/verify.html#${receipt}`;
     const input = el("input", { type: "text", readonly: "", value: link, "aria-label": "Receipt link" });
-    const copy = el("button", { class: "btn", type: "button", text: "Copy link" });
+    const copy = el("button", { class: "btn small-btn", type: "button", text: "Copy link" });
     copy.addEventListener("click", async () => {
       await navigator.clipboard.writeText(link);
       copy.textContent = "Copied";
       setTimeout(() => (copy.textContent = "Copy link"), 1800);
     });
-    const open = el("a", { class: "btn secondary", href: link, target: "_blank", rel: "noopener", text: "Open as verifier" });
+    const open = el("a", { class: "btn secondary small-btn", href: link, target: "_blank", rel: "noopener", text: "Open" });
 
-    const dl = el("dl");
-    const add = (k, v, cls) => { if (v) dl.append(el("dt", { text: k }), el("dd", cls ? { text: v, class: cls } : { text: v })); };
-    add("To", d.recipient, "addr");
-    add("Memo", d.memo || "No memo");
-    add("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
-    add("Mined", meta.height ? `Block ${meta.height.toLocaleString("en-US")}, ${formatTime(meta.time)}` : "");
+    const rows = el("dl", { class: "rows" });
+    const row = (k, v, mono) => { if (v) rows.append(el("div", {}, el("dt", { text: k }), el("dd", mono ? { class: "mono", text: v } : { text: v }))); };
+    row("To", d.recipient, true);
+    row("Memo", d.memo || "No memo");
+    row("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
 
     return el("article", { class: "payment" },
-      el("div", { class: "head" }, el("span", { class: "value", text: `${formatZec(d.value_zat)} ZEC` })),
-      dl,
+      el("p", { class: "value", text: `${formatZec(d.value_zat)} ZEC` }),
+      rows,
       el("div", { class: "share" }, input, copy, open),
     );
   }

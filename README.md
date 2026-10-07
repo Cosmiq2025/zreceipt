@@ -34,7 +34,7 @@ tests/            cryptographic round-trip and full-transaction tests
 wasm/             WebAssembly bindings used by the website
 web/              static site + one serverless function that fetches raw transactions
 web/brand/        logo files (SVG and PNG)
-tools/brand.py    generates the logo and the security-print patterns
+tools/brand.py    generates the logo files
 ```
 
 ## Run
@@ -56,7 +56,7 @@ The built WebAssembly is committed in `web/pkg`, so deploying the `web` folder n
 
 ## Brand
 
-The mark is a tear-off receipt with one line pulled out of it: the payment you disclose. The site borrows from security printing (cheque paper, guilloche, microprint, a notary seal). Type is Source Serif 4 and Public Sans, self-hosted, so the site makes no third-party requests.
+The mark is a tear-off receipt with one line pulled out of it, in Zcash yellow: the payment you disclose. The site is product-first: black, white and one accent, with the real verify screen as the hero. Type is Instrument Sans with IBM Plex Mono for keys and hashes, self-hosted, so the site makes no third-party requests.
 
 ## Privacy model
 

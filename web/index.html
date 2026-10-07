@@ -4,155 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>zreceipt — prove one Zcash payment</title>
-<meta name="description" content="Prove a single shielded Zcash payment to an auditor, bank or tax office without revealing your balance or any other payment.">
+<meta name="description" content="Turn a shielded Zcash payment into a link your auditor, bank or tax office can check themselves. They see that payment and nothing else.">
 <meta property="og:title" content="zreceipt — prove one Zcash payment">
-<meta property="og:description" content="Privacy by default, disclosure by choice. A receipt for one shielded payment, checked against the blockchain.">
+<meta property="og:description" content="Privacy by default. Disclosure by choice.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="preload" href="fonts/source-serif-4-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/instrument-sans-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/" aria-label="zreceipt home">
-      <img class="on-light" src="brand/zreceipt-logo.svg" alt="zreceipt" width="244" height="64">
-      <img class="on-dark" src="brand/zreceipt-logo-white.svg" alt="" width="244" height="64">
-    </a>
+    <a class="brand" href="/" aria-label="zreceipt home"><img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64"></a>
     <nav class="nav" aria-label="Main">
-      <a href="/create.html">Create a receipt</a>
-      <a href="/verify.html">Verify a receipt</a>
+      <a href="/create.html">Create<span class="hide-sm"> a receipt</span></a>
+      <a href="/verify.html">Verify<span class="hide-sm"> a receipt</span></a>
     </nav>
   </header>
 
   <main>
     <section class="hero">
-      <div>
-        <h1>Prove one Zcash payment. Keep the rest private.</h1>
-        <p class="lede">Your auditor, bank or tax office sees the payment they asked about, checked against the blockchain. Your balance, your other payments and your counterparties stay shielded.</p>
-        <div class="actions">
-          <a class="btn" href="/create.html">Create a receipt</a>
-          <a class="btn secondary" href="/verify.html">Verify a receipt</a>
+      <div class="hero-head">
+        <h1>Prove one payment. Keep the rest private.</h1>
+        <div class="side">
+          <p class="sub">zreceipt turns a shielded Zcash payment into a link your auditor, bank or tax office can check themselves. They see that payment. Nothing else.</p>
+          <div class="actions">
+            <a class="btn" href="/create.html">Create a receipt</a>
+            <a class="btn secondary" href="/verify.html">Verify a receipt</a>
+          </div>
         </div>
       </div>
 
-      <figure class="statement" id="statement" aria-label="A month of payments where every line is hidden except one verified payment">
-        <header><strong>October payments</strong><span>Shared with: auditor</span></header>
-        <div class="microprint" aria-hidden="true">ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED ZRECEIPT ONE PAYMENT DISCLOSED</div>
-        <div class="row hidden pre"><span class="d">Oct 01</span><span>Salaries, design team</span><span class="amt">412.50 ZEC</span></div>
-        <div class="row hidden pre"><span class="d">Oct 02</span><span>Office rent</span><span class="amt">38.00 ZEC</span></div>
-        <div class="row hidden pre"><span class="d">Oct 03</span><span>Hardware supplier</span><span class="amt">96.25 ZEC</span></div>
-        <div class="row shown pre"><span class="d">Oct 05</span><span>Invoice #47, web development</span><span class="amt">25.00 ZEC</span></div>
-        <div class="row hidden pre"><span class="d">Oct 06</span><span>Treasury rebalance</span><span class="amt">1,200.00 ZEC</span></div>
-        <div class="row hidden pre"><span class="d">Oct 07</span><span>Legal counsel</span><span class="amt">14.80 ZEC</span></div>
-        <div class="rosette" aria-hidden="true"></div>
-        <div id="seal-slot"></div>
-        <figcaption class="visually-hidden">Only the October 5 payment of 25 ZEC is disclosed and verified.</figcaption>
-      </figure>
-    </section>
+      <div class="stage">
+        <div class="window" role="img" aria-label="The verify page showing a 25 ZEC payment verified on Zcash mainnet">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url"><b>zreceipt.app</b>/verify#zrcpt1eyJ2Ijox…</div></div>
+          <div class="body">
+            <div class="result">
+              <span class="badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M4.6 8.2l2.2 2.2 4.6-4.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified on Zcash mainnet</span>
+              <p class="amount">25.00 <span>ZEC</span></p>
+              <p class="memo">Invoice #47, web development</p>
+              <dl class="rows">
+                <div><dt>Paid to</dt><dd class="mono">u1hq8wz3m6…7k3x9tz7ua</dd></div>
+                <div><dt>Transaction</dt><dd class="mono">42a9f83b5aa0…c7c6bd3c</dd></div>
+                <div><dt>Block</dt><dd>3,512,904 on 5 Oct 2026, 14:12</dd></div>
+                <div><dt>Pool</dt><dd>Ironwood, output 0</dd></div>
+              </dl>
+              <div class="hidden-list">
+                <h3>Not shared with you</h3>
+                <ul>
+                  <li><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Sender's balance</li>
+                  <li><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Sender's other payments</li>
+                  <li><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Sender's address</li>
+                  <li><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Rest of the transaction</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <section class="section" aria-labelledby="how">
-      <h2 id="how">Three steps, no account</h2>
-      <ol class="steps">
-        <li>
-          <h3>Pay as usual</h3>
-          <p>Send a shielded payment from your Zcash wallet. Put the invoice number or purpose in the memo.</p>
-        </li>
-        <li>
-          <h3>Create a receipt</h3>
-          <p>Paste the transaction ID and your viewing key. The receipt is made in your browser, and the key never leaves it.</p>
-        </li>
-        <li>
-          <h3>Send the link</h3>
-          <p>The recipient's browser fetches the transaction from the blockchain and checks the receipt itself. An edited amount or a forged receipt fails.</p>
-        </li>
-      </ol>
-    </section>
-
-    <section class="section" aria-labelledby="what">
-      <h2 id="what">What the person you send it to sees</h2>
-      <p>One payment, proven. Nothing else from your wallet.</p>
-      <div class="split">
-        <section class="certificate payment" aria-label="Example of a verified receipt">
-          <div id="cert-seal"></div>
-          <p class="status">Payment verified</p>
-          <p class="small">Checked in this browser against the Zcash blockchain.</p>
-          <p class="value">25.00 ZEC</p>
-          <dl>
-            <dt>Paid to</dt><dd class="addr">u1hq8w…k3x9tz7</dd>
-            <dt>Memo</dt><dd>Invoice #47, web development</dd>
-            <dt>Mined</dt><dd>Block 3,512,904, 5 Oct 2026</dd>
-            <dt>Pool</dt><dd>Ironwood shielded pool</dd>
-          </dl>
-        </section>
-
-        <table class="ledger">
-          <thead><tr><th scope="col">Shown on the receipt</th><th scope="col">Kept private</th></tr></thead>
-          <tbody>
-            <tr><td class="yes">Amount</td><td class="no">Your balance</td></tr>
-            <tr><td class="yes">Recipient address</td><td class="no">Your address</td></tr>
-            <tr><td class="yes">Memo</td><td class="no">Every other payment</td></tr>
-            <tr><td class="yes">Block and date</td><td class="no">Other outputs in the same transaction</td></tr>
-          </tbody>
-        </table>
+        <div class="message" aria-hidden="true">
+          <div class="from"><span>To: audit team</span><span>14:20</span></div>
+          <p><strong>Re: October audit, invoice #47</strong></p>
+          <p class="muted">Here is the receipt for the payment you asked about.</p>
+          <span class="link">zreceipt.app/verify#zrcpt1eyJ2Ijox…</span>
+        </div>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="for">
-      <h2 id="for">For anyone who has to show a payment</h2>
-      <dl class="people">
-        <dt>Businesses</dt>
-        <dd>Pay staff and suppliers without publishing your payroll, and still answer an audit request in a minute.</dd>
-        <dt>Auditors and accountants</dt>
-        <dd>Get proof of a specific payment that you can check yourself, without asking for access to the whole wallet.</dd>
-        <dt>Banks and exchanges</dt>
-        <dd>Accept shielded funds with a source-of-funds proof that covers the payment in question and nothing more.</dd>
-      </dl>
+    <section class="section" aria-labelledby="two">
+      <div class="section-head">
+        <h2 id="two">One link between you and your auditor.</h2>
+        <p>No accounts and no uploads. The receipt is made in your browser and checked in theirs.</p>
+      </div>
+      <div class="sides">
+        <div class="side-panel">
+          <div class="caption">
+            <h3>You make it</h3>
+            <p>Paste the transaction ID and your wallet's viewing key. The key never leaves your browser.</p>
+          </div>
+          <div class="card" aria-hidden="true">
+            <div class="field"><div class="lbl">Transaction ID</div><div class="val">42a9f83b5aa0102a74418ae4da532345a4c9f472deb86a041ed79410c7c6bd3c</div></div>
+            <div class="field"><div class="lbl">Viewing key</div><div class="val">uview1q8m4x••••••••••••••••••••••••••••••••</div></div>
+            <div class="found">
+              <div><strong>25.00 ZEC</strong><div class="muted">to u1hq8wz3m6…tz7ua</div></div>
+              <span class="btn small-btn">Copy link</span>
+            </div>
+          </div>
+        </div>
+        <div class="side-panel">
+          <div class="caption">
+            <h3>They check it</h3>
+            <p>Their browser rebuilds the payment from the public blockchain. An edited amount or a forged receipt fails.</p>
+          </div>
+          <div class="card" aria-hidden="true">
+            <span class="badge"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M4.6 8.2l2.2 2.2 4.6-4.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Verified</span>
+            <p style="font-size:1.6rem;font-weight:600;letter-spacing:-0.03em;margin:12px 0 2px">25.00 ZEC</p>
+            <p class="muted" style="margin:0 0 16px">Invoice #47, web development</p>
+            <div class="found" style="margin-top:0">
+              <span class="badge bad"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>Edited copy</span>
+              <span class="muted">Does not match the transaction</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="section" aria-labelledby="why">
-      <h2 id="why">Why the result can be trusted</h2>
+    <section class="section" aria-label="Details">
       <div class="facts">
-        <div><h3>Checked by the verifier</h3><p>The recipient's browser recomputes the payment from the public transaction. Nobody has to trust this website.</p></div>
-        <div><h3>Cannot be edited</h3><p>A receipt opens exactly one output. Change the amount, address or memo and the check against the chain fails.</p></div>
-        <div><h3>Your key stays with you</h3><p>The viewing key is used only in your browser to make the receipt. It is never sent, and a receipt cannot spend funds.</p></div>
-        <div><h3>Open and standard</h3><p>Open source. Implements payment disclosure from the Zcash proposal ZIP 311, for the Sapling, Orchard and Ironwood pools.</p></div>
+        <div><h3>Checked by the reader</h3><p>Nobody has to trust this website. The proof is the transaction itself.</p></div>
+        <div><h3>Your key stays with you</h3><p>The viewing key is used locally and never sent. A receipt cannot spend funds.</p></div>
+        <div><h3>Every shielded pool</h3><p>Sapling, Orchard and Ironwood, the pool added in the NU6.3 upgrade.</p></div>
+        <div><h3>Open source</h3><p>Implements payment disclosure from the Zcash proposal ZIP 311. MIT or Apache 2.0.</p></div>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="cta">
+      <h2 id="cta">Privacy by default. Disclosure by choice.</h2>
+      <div class="actions">
+        <a class="btn" href="/create.html">Create a receipt</a>
+        <a class="btn secondary" href="/verify.html">Verify a receipt</a>
       </div>
     </section>
   </main>
-</div>
 
-<section class="band" aria-labelledby="cta">
-  <div class="wrap">
-    <h2 id="cta">Privacy by default, disclosure by choice.</h2>
-    <p>Make a receipt for a payment you sent, or check one you received.</p>
-    <div class="actions">
-      <a class="btn" href="/create.html">Create a receipt</a>
-      <a class="btn secondary" href="/verify.html">Verify a receipt</a>
-    </div>
-  </div>
-</section>
-
-<div class="wrap">
   <footer class="site">
-    <img src="brand/zreceipt-mark.svg" alt="" width="64" height="64" style="height:34px">
-    <p>zreceipt is open source under MIT or Apache 2.0. Receipts are checked against the public Zcash blockchain; this site never sees your viewing key. Built for the Crypto World's Fair 2026.</p>
+    <img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64">
+    <p>Built for the Crypto World's Fair 2026. Independent project, not affiliated with the Zcash Foundation or Electric Coin Co.</p>
   </footer>
 </div>
-
-<script type="module">
-  import { SEAL_SVG } from "./app.js";
-  document.getElementById("seal-slot").outerHTML = SEAL_SVG.replace('class="seal"', 'class="seal pre"');
-  document.getElementById("cert-seal").outerHTML = SEAL_SVG;
-  const rows = [...document.querySelectorAll("#statement .row.hidden")];
-  const shown = document.querySelector("#statement .row.shown");
-  const seal = document.querySelector("#statement .seal");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const t = (ms) => (reduce ? 0 : ms);
-  requestAnimationFrame(() => {
-    rows.forEach((r, i) => setTimeout(() => r.classList.remove("pre"), t(400 + i * 120)));
-    setTimeout(() => shown.classList.remove("pre"), t(400 + rows.length * 120 + 150));
-    setTimeout(() => seal.classList.remove("pre"), t(400 + rows.length * 120 + 650));
-  });
-</script>
 </body>
 </html>
