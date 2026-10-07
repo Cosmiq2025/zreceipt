@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import handler from "./api/tx.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".wasm": "application/wasm", ".json": "application/json", ".svg": "image/svg+xml" };
+const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".wasm": "application/wasm", ".json": "application/json", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
 const fixturePath = join(root, "dev-fixture.json");
 const fixture = existsSync(fixturePath) ? JSON.parse(await readFile(fixturePath, "utf8")) : null;
 
