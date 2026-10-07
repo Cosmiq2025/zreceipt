@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create a receipt — zreceipt</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231e2a44'/%3E%3Crect x='7' y='9' width='18' height='3' fill='%23fff'/%3E%3Crect x='7' y='15' width='18' height='3' fill='%2351c08b'/%3E%3Crect x='7' y='21' width='18' height='3' fill='%23fff'/%3E%3C/svg%3E">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/">z<span>receipt</span></a>
+    <a class="brand" href="/" aria-label="zreceipt home">
+      <img class="on-light" src="brand/zreceipt-logo.svg" alt="zreceipt" width="244" height="64">
+      <img class="on-dark" src="brand/zreceipt-logo-white.svg" alt="" width="244" height="64">
+    </a>
     <nav class="nav" aria-label="Main">
       <a href="/create.html" aria-current="page">Create a receipt</a>
       <a href="/verify.html">Verify a receipt</a>
@@ -23,8 +26,8 @@
     <p class="notice">Your viewing key stays in this browser. The page downloads the public transaction and does every calculation locally.</p>
 
     <form id="form" novalidate>
-      <fieldset class="inline" style="border:0;padding:0;margin:0">
-        <legend style="font-weight:650;margin-bottom:8px">Network</legend>
+      <fieldset class="inline">
+        <legend>Network</legend>
         <label><input type="radio" name="net" value="test" checked> Testnet</label>
         <label><input type="radio" name="net" value="main"> Mainnet</label>
       </fieldset>
@@ -113,8 +116,8 @@
     const open = el("a", { class: "btn secondary", href: link, target: "_blank", rel: "noopener", text: "Open as verifier" });
 
     const dl = el("dl");
-    const add = (k, v) => { if (v) dl.append(el("dt", { text: k }), el("dd", { text: v })); };
-    add("To", d.recipient);
+    const add = (k, v, cls) => { if (v) dl.append(el("dt", { text: k }), el("dd", cls ? { text: v, class: cls } : { text: v })); };
+    add("To", d.recipient, "addr");
     add("Memo", d.memo || "No memo");
     add("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
     add("Mined", meta.height ? `Block ${meta.height.toLocaleString("en-US")}, ${formatTime(meta.time)}` : "");

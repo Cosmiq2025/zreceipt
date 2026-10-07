@@ -33,6 +33,8 @@ src/main.rs       command-line tool
 tests/            cryptographic round-trip and full-transaction tests
 wasm/             WebAssembly bindings used by the website
 web/              static site + one serverless function that fetches raw transactions
+web/brand/        logo files (SVG and PNG)
+tools/brand.py    generates the logo and the security-print patterns
 ```
 
 ## Run
@@ -51,6 +53,10 @@ node web/dev.mjs        # http://localhost:8787
 ```
 
 The built WebAssembly is committed in `web/pkg`, so deploying the `web` folder needs no Rust toolchain.
+
+## Brand
+
+The mark is a tear-off receipt with one line pulled out of it: the payment you disclose. The site borrows from security printing (cheque paper, guilloche, microprint, a notary seal). Type is Source Serif 4 and Public Sans, self-hosted, so the site makes no third-party requests.
 
 ## Privacy model
 

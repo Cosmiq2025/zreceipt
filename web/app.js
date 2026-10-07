@@ -29,9 +29,9 @@ export async function fetchTx(txid, net) {
 
 export function formatZec(zat) {
   const whole = Math.floor(zat / 1e8);
-  const frac = String(zat % 1e8).padStart(8, "0").replace(/0+$/, "");
-  const w = whole.toLocaleString("en-US");
-  return frac ? `${w}.${frac}` : w;
+  let frac = String(zat % 1e8).padStart(8, "0").replace(/0+$/, "");
+  if (frac.length < 2) frac = frac.padEnd(2, "0");   // money style: 25.00, 0.10
+  return `${whole.toLocaleString("en-US")}.${frac}`;
 }
 
 export function formatTime(unix) {
@@ -60,6 +60,6 @@ export function el(tag, attrs = {}, ...kids) {
 
 export const SEAL_SVG = `<svg class="seal" viewBox="0 0 128 128" fill="none" stroke="currentColor" aria-hidden="true">
 <defs><path id="sealring" d="M64 64 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
-<circle cx="64" cy="64" r="60" stroke-width="3"/><circle cx="64" cy="64" r="36" stroke-width="1.5"/>
-<text font-family="Public Sans, sans-serif" font-size="11.5" font-weight="700" letter-spacing="2.2" fill="currentColor" stroke="none"><textPath href="#sealring">VERIFIED ON ZCASH • ONE PAYMENT ONLY •</textPath></text>
+<circle cx="64" cy="64" r="60" stroke-width="3" style="fill:var(--sheet);fill-opacity:.9"/><circle cx="64" cy="64" r="36" stroke-width="1.5"/>
+<text font-family="Public Sans, sans-serif" font-size="11" font-weight="700" fill="currentColor" stroke="none"><textPath href="#sealring" textLength="284" lengthAdjust="spacing">VERIFIED ON ZCASH • ONE PAYMENT ONLY •</textPath></text>
 <path d="M48 65 l11 11 l22 -24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
