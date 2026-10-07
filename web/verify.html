@@ -10,19 +10,16 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/" aria-label="zreceipt home">
-      <img class="on-light" src="brand/zreceipt-logo.svg" alt="zreceipt" width="244" height="64">
-      <img class="on-dark" src="brand/zreceipt-logo-white.svg" alt="" width="244" height="64">
-    </a>
+    <a class="brand" href="/" aria-label="zreceipt home"><img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64"></a>
     <nav class="nav" aria-label="Main">
-      <a href="/create.html">Create a receipt</a>
-      <a href="/verify.html" aria-current="page">Verify a receipt</a>
+      <a href="/create.html">Create<span class="hide-sm"> a receipt</span></a>
+      <a href="/verify.html" aria-current="page">Verify<span class="hide-sm"> a receipt</span></a>
     </nav>
   </header>
 
   <main class="tool">
-    <h1 id="title">Verify a payment receipt</h1>
-    <p class="lede" id="intro">Paste the receipt you were sent. Your browser checks it against the Zcash blockchain; nobody has to be trusted, including us.</p>
+    <h1 id="title">Verify a receipt</h1>
+    <p class="sub" id="intro">Paste the receipt you were sent. Your browser checks it against the Zcash blockchain.</p>
     <div id="out" role="status" aria-live="polite"></div>
 
     <div id="formwrap">
@@ -34,7 +31,7 @@
       </div>
       <details>
         <summary>Paste the raw transaction instead</summary>
-        <p class="small" style="margin-top:10px">Use this to check without contacting any server. Leave it empty to fetch the transaction from the explorer.</p>
+        <p class="small" style="margin-top:10px">Check without contacting any server. Leave it empty to fetch the transaction from the explorer.</p>
         <textarea id="rawtx" spellcheck="false" placeholder="Raw transaction hex"></textarea>
       </details>
       <div><button class="btn" id="go" type="submit">Verify receipt</button></div>
@@ -44,21 +41,20 @@
 </div>
 
 <script type="module">
-  import { engine, fetchTx, formatZec, formatTime, POOL_NAME, EXPLORER, SEAL_SVG, el } from "./app.js";
+  import { engine, fetchTx, renderResult, CROSS_SVG, el } from "./app.js";
 
   const form = document.getElementById("form");
   const out = document.getElementById("out");
   const go = document.getElementById("go");
   const box = document.getElementById("receipt");
+  const title = document.getElementById("title");
+  const intro = document.getElementById("intro");
 
-  function extract(text) {
-    const m = text.match(/zrcpt1[A-Za-z0-9_-]+/);
-    return m ? m[0] : text.trim();
-  }
+  const extract = (text) => (text.match(/zrcpt1[A-Za-z0-9_-]+/) || [text.trim()])[0];
 
   async function verify(code) {
     out.innerHTML = "";
-    out.append(el("p", { class: "spinner-text", text: "Fetching the transaction and checking the receipt…", style: "margin-top:24px" }));
+    out.append(el("p", { class: "spinner-text", text: "Fetching the transaction and checking the receipt…" }));
     go.disabled = true;
     try {
       const eng = await engine();
@@ -66,7 +62,11 @@
       const raw = document.getElementById("rawtx").value.trim();
       const meta = raw ? { hex: raw } : await fetchTx(r.txid, r.net);
       const d = JSON.parse(eng.verifyReceipt(meta.hex, code));
-      showVerified(d, r, meta);
+      out.innerHTML = "";
+      out.append(el("section", { class: "verdict", "aria-label": "Verified payment" }, renderResult(d, r, meta)));
+      title.textContent = "Payment receipt";
+      intro.textContent = "Checked in your browser against the Zcash blockchain. You did not have to trust this website.";
+      tuckForm();
     } catch (err) {
       showFailed(String(err.message || err));
     } finally {
@@ -74,46 +74,6 @@
     }
   }
 
-  function showVerified(d, r, meta) {
-    out.innerHTML = "";
-    const dl = el("dl");
-    const add = (k, v, href, cls) => {
-      if (!v) return;
-      const dd = el("dd", cls ? { class: cls } : {});
-      if (href) dd.append(el("a", { href, target: "_blank", rel: "noopener", text: v })); else dd.textContent = v;
-      dl.append(el("dt", { text: k }), dd);
-    };
-    add("Paid to", d.recipient, null, "addr");
-    add("Memo", d.memo || "No memo");
-    add("Transaction", d.txid, EXPLORER[r.net] + d.txid, "tx");
-    add("Mined", meta.height ? `Block ${meta.height.toLocaleString("en-US")}, ${formatTime(meta.time)}` : "");
-    add("Network", r.net === "main" ? "Zcash mainnet" : "Zcash testnet");
-    add("Pool", `${POOL_NAME[d.pool]} shielded pool, output ${d.index}`);
-
-    const doc = el("section", { class: "certificate payment", "aria-label": "Verified payment" });
-    doc.innerHTML = SEAL_SVG;
-    doc.append(
-      el("p", { class: "status", text: "Payment verified" }),
-      el("p", { class: "small", text: "Checked in this browser: the receipt opens this output, and it matches the commitment recorded on the Zcash blockchain." }),
-      el("p", { class: "value", text: `${formatZec(d.value_zat)} ZEC` }),
-      dl,
-      el("div", { class: "withheld" },
-        el("h3", { text: "Not disclosed by this receipt" }),
-        el("ul", {},
-          el("li", { text: "The sender's balance" }),
-          el("li", { text: "The sender's other payments" }),
-          el("li", { text: "The sender's address" }),
-          el("li", { text: "Other outputs in this transaction" }),
-        ),
-      ),
-    );
-    out.append(doc);
-    document.getElementById("title").textContent = "Payment receipt";
-    document.getElementById("intro").textContent = "This payment was checked in your browser against the Zcash blockchain. Nothing had to be trusted, including this website.";
-    tuckForm();
-  }
-
-  // When the result is on screen, the input form moves below it, collapsed.
   function tuckForm() {
     const wrap = document.getElementById("formwrap");
     if (wrap.parentElement.tagName === "DETAILS") return;
@@ -124,11 +84,13 @@
 
   function showFailed(reason) {
     out.innerHTML = "";
-    document.getElementById("intro").textContent = "Your browser checked this receipt against the Zcash blockchain, and it did not hold up.";
-    out.append(el("section", { class: "certificate payment failed" },
-      el("p", { class: "status", text: "Receipt not verified" }),
+    const badge = el("span", { class: "badge bad" });
+    badge.innerHTML = CROSS_SVG;
+    badge.append("Not verified");
+    out.append(el("section", { class: "verdict failed" },
+      badge,
       el("p", { text: reason }),
-      el("p", { class: "small", text: "A receipt fails if it was edited, belongs to a different transaction, or the transaction cannot be found on the selected network." }),
+      el("p", { class: "small", text: "A receipt fails if it was edited, belongs to a different transaction, or the transaction is not on the network it names." }),
     ));
   }
 
@@ -144,7 +106,7 @@
   if (fromHash.startsWith("zrcpt1")) {
     box.value = fromHash;
     tuckForm();
-    document.getElementById("intro").textContent = "Someone shared a payment receipt with you. Your browser is checking it against the Zcash blockchain.";
+    intro.textContent = "Someone shared a payment receipt with you. Your browser is checking it against the Zcash blockchain.";
     verify(fromHash);
   }
 </script>

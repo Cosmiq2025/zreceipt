@@ -15,10 +15,10 @@ ASSETS = ROOT / "web" / "assets"
 BRAND.mkdir(parents=True, exist_ok=True)
 ASSETS.mkdir(parents=True, exist_ok=True)
 
-INK = "#1B2B4B"
-PAPER = "#F7F9F8"
-SEAL = "#17694A"
-SEAL_DARK_BG = "#4FBF88"
+INK = "#000000"
+PAPER = "#FFFFFF"
+SEAL = "#F4B728"   # Zcash yellow: the one line you disclose
+SEAL_DARK_BG = "#F4B728"
 
 
 # ---------- Mark ----------
@@ -36,13 +36,13 @@ def receipt_outline():
     return d
 
 
-def mark_group(paper, ink, seal, stroke=2.4, gap=None):
+def mark_group(paper, ink, seal, stroke=3, gap=None):
     # One line is pulled out of the receipt: the payment you disclose.
     gap = gap or paper
     return f"""<g>
   <path d="{receipt_outline()}" fill="{paper}" stroke="{ink}" stroke-width="{stroke}" stroke-linejoin="round"/>
   <rect x="15" y="15" width="20" height="6" fill="{ink}"/>
-  <rect x="39.6" y="23.6" width="2.8" height="11.8" fill="{gap}"/>
+  <rect x="39.2" y="23" width="3.6" height="13" fill="{gap}"/>
   <rect x="15" y="25.5" width="42" height="8" fill="{seal}"/>
   <rect x="15" y="38" width="20" height="6" fill="{ink}"/>
 </g>"""
@@ -53,14 +53,14 @@ def svg(w, h, body, extra=""):
 
 
 # ---------- Wordmark: Source Serif 4 Semibold, converted to outlines ----------
-FONT = TTFont(str(ROOT / "web" / "fonts" / "source-serif-4-latin-600-normal.woff2"))
+FONT = TTFont(str(ROOT / "tools" / "InstrumentSans-SemiBold.ttf"))
 GS = FONT.getGlyphSet()
 CMAP = FONT.getBestCmap()
 UPM = FONT["head"].unitsPerEm
 HMTX = FONT["hmtx"]
 
 
-def word_path(text, size, x, baseline, tracking=-0.01):
+def word_path(text, size, x, baseline, tracking=-0.025):
     scale = size / UPM
     out = []
     cx = x
@@ -87,10 +87,10 @@ def write_logos():
     # Horizontal lockup: mark + wordmark
     for name, paper, ink, seal in [
         ("zreceipt-logo.svg", PAPER, INK, SEAL),
-        ("zreceipt-logo-white.svg", "#1B2B4B", "#FFFFFF", SEAL_DARK_BG),
+        ("zreceipt-logo-white.svg", "#000000", "#FFFFFF", SEAL_DARK_BG),
     ]:
-        d, width = word_path("zreceipt", 42, 72, 45)
-        total = math.ceil(72 + width + 4)
+        d, width = word_path("zreceipt", 38, 68, 43)
+        total = math.ceil(68 + width + 4)
         body = mark_group(paper, ink, seal) + f'\n<path d="{d}" fill="{ink}"/>'
         (BRAND / name).write_text(svg(total, 64, body))
 
@@ -138,5 +138,5 @@ def write_patterns():
 
 if __name__ == "__main__":
     write_logos()
-    write_patterns()
+    pass
     print("ok")
