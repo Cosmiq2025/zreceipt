@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   if (!base) return res.status(400).json({ error: "Network must be test or main." });
 
   try {
-    const r = await fetch(`${base}${txid}/raw`, { headers: { accept: "application/json" } });
+    const r = await fetch(`${base}${txid}/raw`, { headers: { accept: "application/json", "user-agent": "Mozilla/5.0 (compatible; zreceipt/1.0; +https://github.com/zreceipt)" } });
     if (r.status === 404) {
       return res.status(404).json({ error: `No transaction with this ID on ${net === "main" ? "mainnet" : "testnet"}. Check the network.` });
     }
