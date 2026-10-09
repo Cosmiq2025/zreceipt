@@ -92,3 +92,24 @@ export function renderResult(d, r, meta) {
   root.append(badge, amt, memo, rows, hidden);
   return root;
 }
+
+/**
+ * Inline field validation: checks on first blur (only once something was typed),
+ * clears as soon as the person edits the field. `check` returns an error string or "".
+ */
+export function validateField(input, check) {
+  const err = document.createElement("p");
+  err.className = "field-error";
+  err.id = `${input.id}-error`;
+  err.setAttribute("aria-live", "polite");
+  input.insertAdjacentElement("afterend", err);
+  input.setAttribute("aria-describedby", err.id);
+  const show = (msg) => {
+    err.textContent = msg;
+    if (msg) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid");
+    return !msg;
+  };
+  input.addEventListener("blur", () => { if (input.value.trim()) show(check(input.value)); });
+  input.addEventListener("input", () => { if (err.textContent) show(""); });
+  return { run: () => show(check(input.value)) };
+}

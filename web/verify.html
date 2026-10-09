@@ -8,16 +8,18 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
   <header class="top">
     <a class="brand" href="/" aria-label="zreceipt home"><img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64"></a>
     <nav class="nav" aria-label="Main">
-      <a href="/create.html">Create<span class="hide-sm"> a receipt</span></a>
-      <a href="/verify.html" aria-current="page">Verify<span class="hide-sm"> a receipt</span></a>
+      <a class="hide-sm" href="/#how">How it works</a>
+      <a href="/verify.html" aria-current="page">Verify</a>
+      <a class="btn small-btn" href="/create.html">Create a receipt</a>
     </nav>
   </header>
 
-  <main class="tool">
+  <main class="tool" id="main">
     <h1 id="title">Verify a receipt</h1>
     <p class="sub" id="intro">Paste the receipt you were sent. Your browser checks it against the Zcash blockchain.</p>
     <div id="out" role="status" aria-live="polite"></div>
@@ -41,7 +43,10 @@
 </div>
 
 <script type="module">
-  import { engine, fetchTx, renderResult, CROSS_SVG, el } from "./app.js";
+  import { engine, fetchTx, renderResult, CROSS_SVG, el, validateField } from "./app.js";
+  const vReceipt = validateField(document.getElementById("receipt"), (v) =>
+    !v.trim() ? "Paste the receipt link or code you were sent." :
+    /zrcpt1[A-Za-z0-9_-]+/.test(v) ? "" : "This is not a receipt. A receipt link contains a code starting with zrcpt1.");
 
   const form = document.getElementById("form");
   const out = document.getElementById("out");
@@ -96,8 +101,8 @@
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
+    if (!vReceipt.run()) { box.focus(); return; }
     const code = extract(box.value);
-    if (!code.startsWith("zrcpt1")) { showFailed("This is not a receipt. A receipt starts with zrcpt1."); return; }
     history.replaceState(null, "", "#" + code);
     verify(code);
   });

@@ -53,7 +53,7 @@ def svg(w, h, body, extra=""):
 
 
 # ---------- Wordmark: Source Serif 4 Semibold, converted to outlines ----------
-FONT = TTFont(str(ROOT / "tools" / "InstrumentSans-SemiBold.ttf"))
+FONT = TTFont(str(ROOT / "tools" / "Onest-SemiBold.ttf"))
 GS = FONT.getGlyphSet()
 CMAP = FONT.getBestCmap()
 UPM = FONT["head"].unitsPerEm

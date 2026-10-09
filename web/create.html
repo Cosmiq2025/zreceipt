@@ -8,16 +8,18 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
   <header class="top">
     <a class="brand" href="/" aria-label="zreceipt home"><img src="brand/zreceipt-logo.svg" alt="zreceipt" width="236" height="64"></a>
     <nav class="nav" aria-label="Main">
-      <a href="/create.html" aria-current="page">Create<span class="hide-sm"> a receipt</span></a>
-      <a href="/verify.html">Verify<span class="hide-sm"> a receipt</span></a>
+      <a class="hide-sm" href="/#how">How it works</a>
+      <a href="/verify.html">Verify</a>
+      <a class="btn small-btn" href="/create.html" aria-current="page">Create a receipt</a>
     </nav>
   </header>
 
-  <main class="tool">
+  <main class="tool" id="main">
     <h1>Create a receipt</h1>
     <p class="sub">One link per payment. Whoever opens it can check that payment and nothing else.</p>
 
@@ -57,7 +59,17 @@
 </div>
 
 <script type="module">
-  import { engine, fetchTx, normalizeTxid, formatZec, POOL_NAME, el } from "./app.js";
+  import { engine, fetchTx, normalizeTxid, formatZec, POOL_NAME, el, validateField } from "./app.js";
+
+  const rawBox = () => document.getElementById("rawtx").value.trim();
+  const vTxid = validateField(document.getElementById("txid"), (v) => {
+    v = v.trim();
+    if (!v) return rawBox() ? "" : "Enter the transaction ID from your wallet.";
+    return /^[0-9a-fA-F]{64}$/.test(v) ? "" : "A transaction ID is 64 letters and numbers. Copy it again from your wallet.";
+  });
+  const vKey = validateField(document.getElementById("ufvk"), (v) =>
+    !v.trim() ? "Paste the viewing key of the wallet that paid." :
+    v.trim().startsWith("uview") ? "" : "A viewing key starts with uview. Check that you copied the viewing key, not an address.");
 
   const form = document.getElementById("form");
   const status = document.getElementById("status");
@@ -77,8 +89,12 @@
     const raw = document.getElementById("rawtx").value.trim();
     let txid = document.getElementById("txid").value;
 
+    const okTx = vTxid.run(), okKey = vKey.run();
+    if (!okTx || !okKey) {
+      (okTx ? document.getElementById("ufvk") : document.getElementById("txid")).focus();
+      return;
+    }
     try {
-      if (!ufvk.startsWith("uview")) throw new Error("Paste the wallet's viewing key. It starts with uview.");
       go.disabled = true;
       say("Fetching the transaction and checking its outputs…");
       const eng = await engine();
