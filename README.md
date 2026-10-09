@@ -4,6 +4,10 @@ Prove one shielded Zcash payment to an auditor, bank or tax office without revea
 
 A receipt is a link. Whoever opens it gets the amount, recipient and memo of exactly one payment, and their browser checks that against the transaction on the Zcash blockchain. Nothing else in the sender's wallet is disclosed, and nobody has to trust this website.
 
+**Live:** https://zreceipt-web.vercel.app
+
+**Try it:** [verify a real receipt](https://zreceipt-web.vercel.app/verify.html#zrcpt1eyJ2IjoxLCJuZXQiOiJtYWluIiwidHhpZCI6ImZjNGNlMTAyYTg3ODE4ZTUwMGI4M2QxZDY0ZGM3NTUyZDY2ZGM4ZjgwNjA5ZTI0OTI2YTU2YTRhOWQ5OTcxODQiLCJwb29sIjoiaXJvbndvb2QiLCJpbmRleCI6MSwib2NrIjoiYjMyOTZlZGZlMzE4NWIzMjMyYTJjZjBjNGUwNDFiNjNkNTFhZTQ4NTAwZDhhNzkwNGJjNDhhZTBmNWU2NDcwOSJ9) for a 0.001 ZEC payment on Zcash mainnet, in the Ironwood pool ([transaction](https://mainnet.zcashexplorer.app/transactions/fc4ce102a87818e500b83d1d64dc7552d66dc8f80609e24926a56a4a9d997184)).
+
 ## How it works
 
 Every shielded output in a Zcash transaction carries an `out_ciphertext`, encrypted under a one-time *outgoing cipher key* (`ock`) that the sender's wallet can derive from its outgoing viewing key. zreceipt:
@@ -19,7 +23,7 @@ This implements the output-disclosure part of the draft [ZIP 311 (Payment Disclo
 
 | Pool | Create | Verify | Tests |
 |---|---|---|---|
-| Ironwood (NU6.3, v6 transactions) | yes | yes | builder round trip, full serialized v6 transaction |
+| Ironwood (NU6.3, v6 transactions) | yes | yes | builder round trip, full serialized v6 transaction, real mainnet payment |
 | Orchard | yes | yes | builder round trip |
 | Sapling | yes | yes | same code path, not yet tested on chain |
 
