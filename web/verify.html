@@ -89,6 +89,8 @@
 
   function showFailed(reason) {
     out.innerHTML = "";
+    title.textContent = "Receipt not verified";
+    intro.textContent = "This receipt could not be confirmed. The reason is below.";
     const badge = el("span", { class: "badge bad" });
     badge.innerHTML = CROSS_SVG;
     badge.append("Not verified");
@@ -114,6 +116,15 @@
     intro.textContent = "Someone shared a payment receipt with you. Your browser is checking it against the Zcash blockchain.";
     verify(fromHash);
   }
+
+  // Editing the link in the address bar only changes the hash, which does not reload the page.
+  addEventListener("hashchange", () => {
+    const code = extract(decodeURIComponent(location.hash.slice(1)));
+    if (!code.startsWith("zrcpt1") || code === box.value) return;
+    box.value = code;
+    tuckForm();
+    verify(code);
+  });
 </script>
 </body>
 </html>
