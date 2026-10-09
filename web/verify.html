@@ -70,7 +70,7 @@
       out.innerHTML = "";
       out.append(el("section", { class: "verdict", "aria-label": "Verified payment" }, renderResult(d, r, meta)));
       title.textContent = "Payment receipt";
-      intro.textContent = "Checked in your browser against the Zcash blockchain. You did not have to trust this website.";
+      intro.textContent = "Checked in your browser against the Zcash blockchain, not by this website's server.";
       tuckForm();
     } catch (err) {
       showFailed(String(err.message || err));
