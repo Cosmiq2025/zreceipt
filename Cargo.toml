@@ -24,6 +24,9 @@ zip32 = "0.2.1"
 [dev-dependencies]
 sapling = { package = "sapling-crypto", version = "0.7", features = ["circuit", "test-dependencies"] }
 orchard = { version = "0.15", features = ["circuit"] }
+pasta_curves = "0.5"
+ff = "0.13"
+incrementalmerkletree = "0.8"
 rand = "0.8"
 serde_json = "1.0.151"
 

@@ -1947,8 +1947,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
+ "ff",
  "hex",
+ "incrementalmerkletree",
  "orchard",
+ "pasta_curves",
  "rand",
  "sapling-crypto",
  "serde",

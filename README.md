@@ -40,6 +40,8 @@ Not yet:
 src/lib.rs        engine: create_receipts, verify_receipt, receipt encoding
 src/main.rs       command-line tool
 tests/            cryptographic round-trip and full-transaction tests
+                  (tests/orchard_spend_authority.rs: prototype of the proposed Orchard/Ironwood
+                  spend-authority proof for ZIP 311; tests only, not used by the website)
 wasm/             WebAssembly bindings used by the website
 web/              static site + one serverless function that fetches raw transactions
 web/brand/        logo files (SVG and PNG)
