@@ -71,7 +71,7 @@ The mark is a tear-off receipt with one line pulled out of it, in Zcash yellow: 
 
 - The viewing key is used only in the creator's browser and is never sent anywhere.
 - The receipt travels in the URL fragment (`#zrcpt1…`), which browsers do not send to servers.
-- The server only fetches public raw transactions by txid from a block explorer, so it and the explorer see which txid is being checked. A verifier who does not want to contact it can paste the raw transaction instead (this skips the on-chain check).
+- The server only fetches public raw transactions by txid from a block explorer, so it and the explorer see which txid is being checked. A verifier who does not want to contact it can paste the raw transaction instead; the page then cannot tell whether the transaction was mined, and says so.
 
 ## License
 

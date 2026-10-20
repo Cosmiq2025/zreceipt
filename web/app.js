@@ -67,9 +67,10 @@ const NET_NAME = { main: "Zcash mainnet", test: "Zcash testnet" };
 /** The verified-payment view, shared by verify.html. */
 export function renderResult(d, r, meta) {
   const root = el("div", { class: "result" });
-  const badge = el("span", { class: meta.pasted ? "badge partial" : "badge" });
+  const unmined = !meta.pasted && !meta.height;
+  const badge = el("span", { class: meta.pasted || unmined ? "badge partial" : "badge" });
   badge.innerHTML = CHECK_SVG;
-  badge.append(meta.pasted ? "Matches the pasted transaction" : `Verified on ${NET_NAME[r.net]}`);
+  badge.append(meta.pasted ? "Matches the pasted transaction" : unmined ? "Matches the transaction (not yet in a block)" : `Verified on ${NET_NAME[r.net]}`);
   const amt = el("p", { class: "amount" }, `${formatZec(d.value_zat)} `, el("span", { text: "ZEC" }));
   const memo = el("p", { class: "memo", text: d.memo || "No memo" });
   const rows = el("dl", { class: "rows" });
@@ -85,7 +86,7 @@ export function renderResult(d, r, meta) {
   row("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
   const hidden = el("div", { class: "hidden-list" }, el("h3", { text: "Not shared with you" }));
   const ul = el("ul");
-  for (const t of ["Sender's balance", "Sender's other payments", "Sender's address", "Rest of the transaction"]) {
+  for (const t of ["Sender's balance", "Sender's other payments", "Sender's address", "Other outputs in the transaction"]) {
     const li = el("li"); li.innerHTML = LOCK_SVG; li.append(t); ul.append(li);
   }
   hidden.append(ul);

@@ -51,7 +51,7 @@
           <strong><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>Balance not shared</strong>
         </div>
         <div class="float two" aria-hidden="true">
-          <strong><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>Edited copy rejected</strong>
+          <strong><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>Edited link rejected</strong>
           <span>Amount changed to 0.010 ZEC</span>
         </div>
       </div>
@@ -96,7 +96,7 @@
         <h2 id="split-title">What they see, and what they don't</h2>
         <div class="cols">
           <div class="shown"><h3>Shown</h3><ul><li>Amount</li><li>Recipient</li><li>Memo</li><li>Block and date</li></ul></div>
-          <div class="kept"><h3>Kept private</h3><ul><li>Your balance</li><li>Other payments</li><li>Your address</li><li>Rest of the transaction</li></ul></div>
+          <div class="kept"><h3>Kept private</h3><ul><li>Your balance</li><li>Other payments</li><li>Your address</li><li>Other outputs in the transaction</li></ul></div>
         </div>
       </div>
     </section>
@@ -106,7 +106,7 @@
       <div class="who">
         <div><h3>Businesses</h3><p>Keep payroll and suppliers private, and answer an audit request with one link.</p></div>
         <div><h3>Auditors and accountants</h3><p>Check the payment you asked about against the blockchain. No screenshots, no wallet access.</p></div>
-        <div><h3>Banks and exchanges</h3><p>Confirm the source of funds for one deposit without seeing the client's whole wallet.</p></div>
+        <div><h3>Banks and exchanges</h3><p>Confirm the amount, recipient and memo of one deposit without seeing the client's whole wallet.</p></div>
       </div>
     </section>
 
@@ -122,7 +122,7 @@
   </main>
 
   <footer class="site">
-    <p><a href="https://github.com/Cosmiq2025/zreceipt">Source code on GitHub</a>. Implements payment disclosure from <a href="https://zips.z.cash/zip-0311">ZIP 311</a> for Sapling, Orchard and Ironwood.</p>
+    <p><a href="https://github.com/Cosmiq2025/zreceipt">Source code on GitHub</a>. Implements the output-disclosure step of draft <a href="https://zips.z.cash/zip-0311">ZIP 311</a> (Sapling) and applies it to Orchard and Ironwood.</p>
     <p>Built for the Crypto World's Fair 2026. Not affiliated with the Zcash Foundation or Electric Coin Co.</p>
   </footer>
 </div>
