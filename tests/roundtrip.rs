@@ -69,12 +69,13 @@ fn ironwood_payment_round_trip() {
     let fvk = decoded.orchard().unwrap();
 
     // Sender: exactly one action is ours (the rest are padding dummies).
-    let created = recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), fvk, Net::Test, "txid-under-test", Pool::Ironwood);
+    let created = recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), fvk, Net::Test, "abababababababababababababababababababababababababababababababab", Pool::Ironwood);
     assert_eq!(created.len(), 1, "expected exactly one disclosable payment");
     let c = &created[0];
     assert_eq!(c.disclosed.value_zat, PAID);
     assert_eq!(c.disclosed.memo.as_deref(), Some(MEMO));
     assert!(c.disclosed.recipient.starts_with("utest1"));
+    assert!(!c.change);
 
     // Verifier: only the encoded receipt + the public actions.
     let receipt = Receipt::decode(&c.receipt).unwrap();
@@ -87,16 +88,28 @@ fn ironwood_payment_round_trip() {
 fn orchard_payment_round_trip() {
     let f = fixture();
     let bundle = build_payment(BundleVersion::orchard_v2(), &f);
-    let created = recover_actions::<OrchardVersion, _>(bundle.actions().iter(), &f.sender_fvk, Net::Test, "t", Pool::Orchard);
+    let created = recover_actions::<OrchardVersion, _>(bundle.actions().iter(), &f.sender_fvk, Net::Test, "abababababababababababababababababababababababababababababababab", Pool::Orchard);
     assert_eq!(created.len(), 1);
-    assert_eq!(created[0].disclosed.value_zat, PAID);
+    let c = &created[0];
+    assert_eq!(c.disclosed.value_zat, PAID);
+    assert_eq!(c.disclosed.memo.as_deref(), Some(MEMO));
+
+    // Verifier: opens the same payment from the encoded receipt alone.
+    let receipt = Receipt::decode(&c.receipt).unwrap();
+    assert_eq!(receipt.pool, Pool::Orchard);
+    let ock = zcash_note_encryption::OutgoingCipherKey(hex::decode(&receipt.ock).unwrap().try_into().unwrap());
+    let opened = open_action::<OrchardVersion, _>(bundle.actions().iter(), &receipt, &ock, receipt.txid.clone()).unwrap();
+    assert_eq!(opened, c.disclosed);
+
+    // An Orchard receipt does not open under the Ironwood note-encryption domain.
+    assert!(open_action::<IronwoodVersion, _>(bundle.actions().iter(), &receipt, &ock, receipt.txid.clone()).is_err());
 }
 
 #[test]
 fn receipt_opens_only_its_own_output() {
     let f = fixture();
     let bundle = build_payment(BundleVersion::ironwood_v3(), &f);
-    let c = &recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), &f.sender_fvk, Net::Test, "t", Pool::Ironwood)[0];
+    let c = &recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), &f.sender_fvk, Net::Test, "abababababababababababababababababababababababababababababababab", Pool::Ironwood)[0];
     let receipt = Receipt::decode(&c.receipt).unwrap();
     let ock = zcash_note_encryption::OutgoingCipherKey(hex::decode(&receipt.ock).unwrap().try_into().unwrap());
 
@@ -104,21 +117,21 @@ fn receipt_opens_only_its_own_output() {
     let n = bundle.actions().len();
     for i in (0..n).filter(|&i| i != receipt.index) {
         let other = Receipt { index: i, ..receipt.clone() };
-        assert!(open_action::<IronwoodVersion, _>(bundle.actions().iter(), &other, &ock, "t".into()).is_err());
+        assert!(open_action::<IronwoodVersion, _>(bundle.actions().iter(), &other, &ock, "abababababababababababababababababababababababababababababababab".into()).is_err());
     }
 
     // A forged key must fail.
     let mut bad = ock.0;
     bad[0] ^= 1;
     let forged = zcash_note_encryption::OutgoingCipherKey(bad);
-    assert!(open_action::<IronwoodVersion, _>(bundle.actions().iter(), &receipt, &forged, "t".into()).is_err());
+    assert!(open_action::<IronwoodVersion, _>(bundle.actions().iter(), &receipt, &forged, "abababababababababababababababababababababababababababababababab".into()).is_err());
 }
 
 #[test]
 fn stranger_viewing_key_discloses_nothing() {
     let f = fixture();
     let bundle = build_payment(BundleVersion::ironwood_v3(), &f);
-    let created = recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), &f.stranger_fvk, Net::Test, "t", Pool::Ironwood);
+    let created = recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), &f.stranger_fvk, Net::Test, "abababababababababababababababababababababababababababababababab", Pool::Ironwood);
     assert!(created.is_empty());
 }
 
@@ -126,4 +139,49 @@ fn stranger_viewing_key_discloses_nothing() {
 fn receipt_encoding_rejects_garbage() {
     assert!(Receipt::decode("hello").is_err());
     assert!(Receipt::decode("zrcpt1!!!").is_err());
+}
+
+#[test]
+fn edited_receipt_is_rejected_even_if_fields_are_unchanged() {
+    let f = fixture();
+    let bundle = build_payment(BundleVersion::ironwood_v3(), &f);
+    let c = &recover_actions::<IronwoodVersion, _>(bundle.actions().iter(), &f.sender_fvk, Net::Test, "abababababababababababababababababababababababababababababababab", Pool::Ironwood)[0];
+    let good = Receipt::decode(&c.receipt).unwrap();
+    let body = |j: String| format!("zrcpt1{}", base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, j));
+
+    // Upper-case hex in the key decodes to the same bytes but is not the canonical encoding.
+    let upper = body(serde_json::to_string(&Receipt { ock: good.ock.to_uppercase(), ..good.clone() }).unwrap());
+    assert!(Receipt::decode(&upper).is_err());
+
+    // Reordered and extra fields.
+    let reordered = body(format!(
+        r#"{{"ock":"{}","index":{},"pool":"ironwood","txid":"{}","net":"test","v":1}}"#,
+        good.ock, good.index, good.txid
+    ));
+    assert!(Receipt::decode(&reordered).is_err());
+    let mut extra: serde_json::Value = serde_json::to_value(&good).unwrap();
+    extra["note"] = "x".into();
+    assert!(Receipt::decode(&body(extra.to_string())).is_err());
+
+    // Every single-character change to the receipt string is rejected or opens nothing.
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    let s = c.receipt.clone();
+    for pos in 6..s.len() {
+        for ch in alphabet.chars() {
+            if s.as_bytes()[pos] as char == ch {
+                continue;
+            }
+            let mut t = s.clone();
+            t.replace_range(pos..pos + 1, &ch.to_string());
+            if let Ok(r) = Receipt::decode(&t) {
+                let ok = r.ock_bytes().ok().and_then(|ock| {
+                    open_action::<IronwoodVersion, _>(bundle.actions().iter(), &r, &ock, r.txid.clone()).ok()
+                });
+                assert!(ok.is_none() || r.txid != good.txid || r.net != good.net, "edit at {pos} to {ch:?} still verified");
+            }
+        }
+    }
+
+    // The original still decodes.
+    assert_eq!(Receipt::decode(&c.receipt).unwrap(), good);
 }

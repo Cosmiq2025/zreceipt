@@ -8,8 +8,12 @@
 //! against the commitment in the transaction, so a receipt cannot claim an
 //! amount or recipient that the chain does not contain.
 //!
-//! This follows the output-disclosure part of the draft ZIP 311 (Sapling)
-//! and applies the same construction to Orchard actions.
+//! This implements the output-recovery step of the draft ZIP 311 (which
+//! specifies Sapling) and applies the same step to Orchard and Ironwood
+//! actions, which ZIP 311 does not yet cover. It does not implement the
+//! spend-authority proof that ZIP 311 requires for a complete payment
+//! disclosure, and the `zrcpt1` encoding is zreceipt's own, because ZIP 311
+//! does not yet define one.
 
 use anyhow::{anyhow, bail, Context, Result};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -91,10 +95,17 @@ impl Receipt {
         if r.v != 1 {
             bail!("This receipt was made by a newer version of zreceipt (format {}).", r.v);
         }
+        // Accept only the exact encoding zreceipt produces, so that every edit
+        // to a receipt, even one that would decode to the same fields (letter
+        // case, field order, extra fields), is rejected.
+        let canonical_hex = |h: &str, n: usize| h.len() == n && h.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'));
+        if !canonical_hex(&r.ock, 64) || !canonical_hex(&r.txid, 64) || r.encode() != format!("{RECEIPT_PREFIX}{body}") {
+            bail!(DAMAGED);
+        }
         Ok(r)
     }
 
-    fn ock_bytes(&self) -> Result<OutgoingCipherKey> {
+    pub fn ock_bytes(&self) -> Result<OutgoingCipherKey> {
         let raw = hex::decode(&self.ock).context("ock is not hex")?;
         let arr: [u8; 32] = raw.try_into().map_err(|_| anyhow!("ock must be 32 bytes"))?;
         Ok(OutgoingCipherKey(arr))
@@ -119,6 +130,11 @@ pub struct Disclosed {
 pub struct CreatedReceipt {
     pub receipt: String,
     pub disclosed: Disclosed,
+    /// True when the output was recovered with the wallet's internal
+    /// (change) key, i.e. it most likely went back to the sender's own
+    /// wallet. Sharing such a receipt reveals one of the sender's addresses.
+    #[serde(default)]
+    pub change: bool,
 }
 
 /// Parses a raw transaction from hex. The branch id is only consulted for
@@ -161,42 +177,7 @@ pub fn create_receipts(tx: &Transaction, ufvk: &str, net: Net) -> Result<Vec<Cre
     let mut out = Vec::new();
 
     if let (Some(bundle), Some(dfvk)) = (tx.sapling_bundle(), ufvk.sapling()) {
-        let domain = SaplingDomain::new(Zip212Enforcement::On);
-        let ovks = [dfvk.to_ovk(zip32::Scope::External), dfvk.to_ovk(zip32::Scope::Internal)];
-        for (index, output) in bundle.shielded_outputs().iter().enumerate() {
-            for ovk in &ovks {
-                let ock = <SaplingDomain as Domain>::derive_ock(
-                    ovk,
-                    output.cv(),
-                    &output.cmu().to_bytes(),
-                    output.ephemeral_key(),
-                );
-                if let Some((note, to, memo)) =
-                    try_output_recovery_with_ock(&domain, &ock, output, output.out_ciphertext())
-                {
-                    let receipt = Receipt {
-                        v: 1,
-                        net,
-                        txid: txid.clone(),
-                        pool: Pool::Sapling,
-                        index,
-                        ock: hex::encode(ock.0),
-                    };
-                    out.push(CreatedReceipt {
-                        receipt: receipt.encode(),
-                        disclosed: Disclosed {
-                            txid: txid.clone(),
-                            pool: Pool::Sapling,
-                            index,
-                            value_zat: note.value().inner(),
-                            recipient: encode_sapling(net, &to),
-                            memo: memo_text(&memo),
-                        },
-                    });
-                    break;
-                }
-            }
-        }
+        out.extend(recover_sapling_outputs(bundle.shielded_outputs(), dfvk, net, &txid));
     }
 
     if let Some(fvk) = ufvk.orchard() {
@@ -224,22 +205,7 @@ pub fn verify_receipt(tx: &Transaction, receipt: &Receipt) -> Result<Disclosed> 
     match receipt.pool {
         Pool::Sapling => {
             let bundle = tx.sapling_bundle().ok_or_else(|| anyhow!("This transaction has no Sapling outputs, so the receipt does not belong to it."))?;
-            let output = bundle
-                .shielded_outputs()
-                .get(receipt.index)
-                .ok_or_else(|| anyhow!("Sapling output {} does not exist", receipt.index))?;
-            let domain = SaplingDomain::new(Zip212Enforcement::On);
-            let (note, to, memo) =
-                try_output_recovery_with_ock(&domain, &ock, output, output.out_ciphertext())
-                    .ok_or_else(|| anyhow!("This receipt does not match the payment recorded in the transaction. It may have been edited."))?;
-            Ok(Disclosed {
-                txid,
-                pool: Pool::Sapling,
-                index: receipt.index,
-                value_zat: note.value().inner(),
-                recipient: encode_sapling(receipt.net, &to),
-                memo: memo_text(&memo),
-            })
+            open_sapling_output(bundle.shielded_outputs(), receipt, &ock, txid)
         }
         Pool::Orchard => {
             let bundle = tx.orchard_bundle().ok_or_else(|| anyhow!("This transaction has no Orchard outputs, so the receipt does not belong to it."))?;
@@ -250,6 +216,66 @@ pub fn verify_receipt(tx: &Transaction, receipt: &Receipt) -> Result<Disclosed> 
             open_action::<IronwoodVersion, _>(bundle.actions().iter(), receipt, &ock, txid)
         }
     }
+}
+
+/// Sapling sender-side recovery over a list of outputs.
+///
+/// Decryption assumes ZIP 212 note plaintexts, so Sapling outputs created
+/// before Canopy (or in its grace period) are not recovered.
+pub fn recover_sapling_outputs<P>(
+    outputs: &[sapling::bundle::OutputDescription<P>],
+    dfvk: &sapling::zip32::DiversifiableFullViewingKey,
+    net: Net,
+    txid: &str,
+) -> Vec<CreatedReceipt> {
+    let domain = SaplingDomain::new(Zip212Enforcement::On);
+    let ovks = [dfvk.to_ovk(zip32::Scope::External), dfvk.to_ovk(zip32::Scope::Internal)];
+    let mut out = Vec::new();
+    for (index, output) in outputs.iter().enumerate() {
+        for (k, ovk) in ovks.iter().enumerate() {
+            let ock = <SaplingDomain as Domain>::derive_ock(ovk, output.cv(), &output.cmu().to_bytes(), output.ephemeral_key());
+            if let Some((note, to, memo)) = try_output_recovery_with_ock(&domain, &ock, output, output.out_ciphertext()) {
+                let receipt = Receipt { v: 1, net, txid: txid.to_string(), pool: Pool::Sapling, index, ock: hex::encode(ock.0) };
+                out.push(CreatedReceipt {
+                    receipt: receipt.encode(),
+                    disclosed: Disclosed {
+                        txid: txid.to_string(),
+                        pool: Pool::Sapling,
+                        index,
+                        value_zat: note.value().inner(),
+                        recipient: encode_sapling(net, &to),
+                        memo: memo_text(&memo),
+                    },
+                    change: k == 1,
+                });
+                break;
+            }
+        }
+    }
+    out
+}
+
+/// Sapling verifier-side opening of a single output.
+pub fn open_sapling_output<P>(
+    outputs: &[sapling::bundle::OutputDescription<P>],
+    receipt: &Receipt,
+    ock: &OutgoingCipherKey,
+    txid: String,
+) -> Result<Disclosed> {
+    let output = outputs
+        .get(receipt.index)
+        .ok_or_else(|| anyhow!("Sapling output {} does not exist", receipt.index))?;
+    let domain = SaplingDomain::new(Zip212Enforcement::On);
+    let (note, to, memo) = try_output_recovery_with_ock(&domain, ock, output, output.out_ciphertext())
+        .ok_or_else(|| anyhow!("This receipt does not match the payment recorded in the transaction. It may have been edited."))?;
+    Ok(Disclosed {
+        txid,
+        pool: Pool::Sapling,
+        index: receipt.index,
+        value_zat: note.value().inner(),
+        recipient: encode_sapling(receipt.net, &to),
+        memo: memo_text(&memo),
+    })
 }
 
 /// Orchard-family (Orchard, Ironwood) sender-side recovery over a list of actions.
@@ -267,7 +293,7 @@ pub fn recover_actions<'a, V: DomainVersion, T: 'a>(
     let mut out = Vec::new();
     for (index, action) in actions.into_iter().enumerate() {
         let domain = NoteEncryptionDomain::<V>::for_action(action);
-        for ovk in &ovks {
+        for (k, ovk) in ovks.iter().enumerate() {
             let ock = <NoteEncryptionDomain<V> as Domain>::derive_ock(
                 ovk,
                 action.cv_net(),
@@ -288,6 +314,7 @@ pub fn recover_actions<'a, V: DomainVersion, T: 'a>(
                         recipient: encode_orchard(net, to),
                         memo: memo_text(&memo),
                     },
+                    change: k == 1,
                 });
                 break;
             }
