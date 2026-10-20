@@ -141,6 +141,8 @@ footer.site a { color: var(--ink-2); }
 .badge { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; flex: none; min-height: 30px; padding: 0 11px 0 9px; border-radius: 8px; font-size: 0.86rem; font-weight: 600; background: var(--ok-soft); color: var(--ok); align-self: flex-start; }
 .badge svg { width: 15px; height: 15px; }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }
+.badge.partial { background: var(--yellow-soft); color: var(--ink); }
+.warn { background: var(--yellow-soft); color: var(--ink); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
 .result { display: flex; flex-direction: column; }
 .result .amount { font-size: clamp(2.75rem, 6vw, 4rem); font-weight: 600; letter-spacing: -0.05em; line-height: 1; margin: 20px 0 8px; }
 .result .amount span { color: var(--ink-3); font-weight: 500; letter-spacing: -0.02em; }

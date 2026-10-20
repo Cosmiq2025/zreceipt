@@ -26,4 +26,4 @@ instead of opening a public issue.
 
 ## License
 By contributing, you agree that your contributions are licensed under
-the same terms as the project (MIT OR Apache-2.0).
+the same terms as the project (MIT).

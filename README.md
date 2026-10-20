@@ -2,7 +2,7 @@
 
 Prove one shielded Zcash payment to an auditor, bank or tax office without revealing your balance, your other payments or your own address.
 
-A receipt is a link. Whoever opens it gets the amount, recipient and memo of exactly one payment, and their browser checks that against the transaction on the Zcash blockchain. Nothing else in the sender's wallet is disclosed, and nobody has to trust this website.
+A receipt is a link. Whoever opens it gets the amount, recipient and memo of exactly one payment, and their browser checks it against the transaction on the Zcash blockchain. Nothing else in the sender's wallet is disclosed.
 
 **Live:** https://zreceipt-web.vercel.app
 
@@ -13,21 +13,26 @@ A receipt is a link. Whoever opens it gets the amount, recipient and memo of exa
 Every shielded output in a Zcash transaction carries an `out_ciphertext`, encrypted under a one-time *outgoing cipher key* (`ock`) that the sender's wallet can derive from its outgoing viewing key. zreceipt:
 
 1. **Create:** takes the raw transaction and the sender's unified full viewing key, derives the `ock` for each output the wallet created, and packages one `ock` with the txid, pool and output index into a receipt (`zrcpt1…`).
-2. **Verify:** fetches the raw transaction, uses the `ock` to recover the recipient's transmission key and the ephemeral secret, decrypts the note and re-derives its note commitment. The commitment must equal the one recorded in the transaction, so the amount, recipient and memo cannot be altered.
+2. **Verify:** fetches the raw transaction, checks that it hashes to the txid in the receipt, uses the `ock` to recover the recipient's transmission key and the ephemeral secret, decrypts the note and re-derives its note commitment. The commitment must equal the one recorded in the transaction, so the amount, recipient and memo cannot be altered.
 
-An `ock` opens a single output. It reveals nothing about the sender's other notes, balance or address, and it cannot be used to spend.
+An `ock` opens a single output. It reveals nothing about the sender's other notes or balance, and it cannot be used to spend. (A receipt for a change output would show one of the sender's own addresses; the create page marks those.) Outputs the sender created without an outgoing viewing key cannot be disclosed.
 
-This implements the output-disclosure part of the draft [ZIP 311 (Payment Disclosures)](https://zips.z.cash/zip-0311), which specifies Sapling and has no reference implementation, and applies the same construction to **Orchard** and the new **Ironwood** pool introduced by NU6.3.
+This implements the output-recovery step of the draft [ZIP 311 (Payment Disclosures)](https://zips.z.cash/zip-0311), which specifies Sapling, and applies the same step to **Orchard** and the new **Ironwood** pool introduced by NU6.3, which ZIP 311 does not yet cover. ZIP 311 treats a payment disclosure as complete only with a spend-authority proof, which zreceipt does not implement yet, and it does not yet define an encoding, so the `zrcpt1` format is zreceipt's own.
 
 ## Supported
 
 | Pool | Create | Verify | Tests |
 |---|---|---|---|
-| Ironwood (NU6.3, v6 transactions) | yes | yes | builder round trip, full serialized v6 transaction, real mainnet payment |
-| Orchard | yes | yes | builder round trip |
-| Sapling | yes | yes | same code path, not yet tested on chain |
+| Ironwood (NU6.3, v6 transactions) | yes | yes | builder round trip, full serialized v6 transaction; one real mainnet payment verified on the live site |
+| Orchard | yes | yes | builder round trip (create and verify) |
+| Sapling | yes | yes | builder round trip (create and verify); post-Canopy (ZIP 212) notes only; not yet tested on chain |
 
-Not yet: proving which wallet *sent* the payment (the spend-authority part of ZIP 311).
+Receipts must be in the exact encoding zreceipt produces, so an edited link is rejected even when it decodes to the same fields, and changing a field makes verification fail (see `tests/roundtrip.rs`). A transaction does not record its network, so the receipt's network is checked only by where the transaction is fetched from, not when you paste one.
+
+Not yet:
+
+- proving which wallet *sent* the payment (the spend-authority part of ZIP 311);
+- checking that the transaction is in a block. The website fetches the transaction and its block height from the zcashexplorer.app block explorer through its own small server function. When you paste a raw transaction instead, the page checks the receipt against it but cannot tell whether it was ever mined, and says so.
 
 ## Layout
 
@@ -60,14 +65,14 @@ The built WebAssembly is committed in `web/pkg`, so deploying the `web` folder n
 
 ## Brand
 
-The mark is a tear-off receipt with one line pulled out of it, in Zcash yellow: the payment you disclose. The site is product-first: black, white and one accent, with the real verify screen as the hero. Type is Instrument Sans with IBM Plex Mono for keys and hashes, self-hosted, so the site makes no third-party requests.
+The mark is a tear-off receipt with one line pulled out of it, in Zcash yellow: the payment you disclose. The site is product-first: black, white and one accent, with the real verify screen as the hero. Type is Onest with JetBrains Mono for keys and hashes, self-hosted, so the site makes no third-party requests.
 
 ## Privacy model
 
 - The viewing key is used only in the creator's browser and is never sent anywhere.
 - The receipt travels in the URL fragment (`#zrcpt1…`), which browsers do not send to servers.
-- The server only fetches public raw transactions by txid from a block explorer. A verifier who does not want to contact it can paste the raw transaction instead.
+- The server only fetches public raw transactions by txid from a block explorer, so it and the explorer see which txid is being checked. A verifier who does not want to contact it can paste the raw transaction instead (this skips the on-chain check).
 
 ## License
 
-MIT OR Apache-2.0
+MIT

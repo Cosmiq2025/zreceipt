@@ -33,7 +33,7 @@
       </div>
       <details>
         <summary>Paste the raw transaction instead</summary>
-        <p class="small" style="margin-top:10px">Check without contacting any server. Leave it empty to fetch the transaction from the explorer.</p>
+        <p class="small" style="margin-top:10px">Check without contacting any server. This confirms the receipt matches the transaction you paste, but not that the transaction is on the blockchain. Leave it empty to fetch the transaction from the explorer.</p>
         <textarea id="rawtx" spellcheck="false" placeholder="Raw transaction hex"></textarea>
       </details>
       <div><button class="btn" id="go" type="submit">Verify receipt</button></div>
@@ -65,12 +65,14 @@
       const eng = await engine();
       const r = JSON.parse(eng.inspectReceipt(code));
       const raw = document.getElementById("rawtx").value.trim();
-      const meta = raw ? { hex: raw } : await fetchTx(r.txid, r.net);
+      const meta = raw ? { hex: raw, pasted: true } : await fetchTx(r.txid, r.net);
       const d = JSON.parse(eng.verifyReceipt(meta.hex, code));
       out.innerHTML = "";
       out.append(el("section", { class: "verdict", "aria-label": "Verified payment" }, renderResult(d, r, meta)));
       title.textContent = "Payment receipt";
-      intro.textContent = "Checked in your browser against the Zcash blockchain, not by this website's server.";
+      intro.textContent = meta.pasted
+        ? "Checked in your browser against the transaction you pasted."
+        : "Checked in your browser. The transaction and its block were fetched from the zcashexplorer.app block explorer.";
       tuckForm();
     } catch (err) {
       showFailed(String(err.message || err));

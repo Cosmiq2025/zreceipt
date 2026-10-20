@@ -108,7 +108,7 @@
         say("This wallet did not pay anything in this transaction. Check the network, and that the viewing key belongs to the wallet that paid.", "error");
         return;
       }
-      say(found.length === 1 ? "Found 1 payment from this wallet." : `Found ${found.length} outputs from this wallet. One of them may be change sent back to yourself.`);
+      say(found.length === 1 ? "Found 1 output from this wallet." : `Found ${found.length} outputs from this wallet.`);
       for (const f of found) results.append(card(f));
     } catch (err) {
       say(String(err.message || err), "error");
@@ -117,7 +117,7 @@
     }
   });
 
-  function card({ receipt, disclosed: d }) {
+  function card({ receipt, disclosed: d, change }) {
     const link = `${location.origin}/verify.html#${receipt}`;
     const input = el("input", { type: "text", readonly: "", value: link, "aria-label": "Receipt link" });
     const copy = el("button", { class: "btn small-btn", type: "button", text: "Copy link" });
@@ -134,8 +134,10 @@
     row("Memo", d.memo || "No memo");
     row("Pool", `${POOL_NAME[d.pool]}, output ${d.index}`);
 
+    const note = change ? el("p", { class: "small warn", text: "This looks like change sent back to your own wallet. Its receipt would show one of your own addresses, so don't share it." }) : "";
     return el("article", { class: "payment" },
       el("p", { class: "value", text: `${formatZec(d.value_zat)} ZEC` }),
+      note,
       rows,
       el("div", { class: "share" }, input, copy, open),
     );

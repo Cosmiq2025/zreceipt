@@ -67,9 +67,9 @@ const NET_NAME = { main: "Zcash mainnet", test: "Zcash testnet" };
 /** The verified-payment view, shared by verify.html. */
 export function renderResult(d, r, meta) {
   const root = el("div", { class: "result" });
-  const badge = el("span", { class: "badge" });
+  const badge = el("span", { class: meta.pasted ? "badge partial" : "badge" });
   badge.innerHTML = CHECK_SVG;
-  badge.append(`Verified on ${NET_NAME[r.net]}`);
+  badge.append(meta.pasted ? "Matches the pasted transaction" : `Verified on ${NET_NAME[r.net]}`);
   const amt = el("p", { class: "amount" }, `${formatZec(d.value_zat)} `, el("span", { text: "ZEC" }));
   const memo = el("p", { class: "memo", text: d.memo || "No memo" });
   const rows = el("dl", { class: "rows" });
@@ -89,6 +89,10 @@ export function renderResult(d, r, meta) {
     const li = el("li"); li.innerHTML = LOCK_SVG; li.append(t); ul.append(li);
   }
   hidden.append(ul);
+  if (meta.pasted) {
+    root.append(badge, el("p", { class: "small warn", text: "This checks the receipt against the transaction you pasted. It does not check that the transaction is on the blockchain, or which network it belongs to. Open the transaction in a block explorer to confirm." }), amt, memo, rows, hidden);
+    return root;
+  }
   root.append(badge, amt, memo, rows, hidden);
   return root;
 }
